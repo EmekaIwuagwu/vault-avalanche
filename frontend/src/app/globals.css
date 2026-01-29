@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Playfair Display", serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-vault-black: #000000;
+  --color-vault-off-white: #FAFAFA;
+  --color-vault-charcoal: #1A1A1A;
+  --color-vault-gray: #E5E5E5;
+  --color-vault-success: #10B981;
+  --color-vault-alert: #DC2626;
+
+  --radius-vault-sm: 2px;
+  --radius-vault-md: 4px;
+
+  --shadow-vault-premium: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-vault-deep: 0 20px 80px rgba(0, 0, 0, 0.12);
+}
+
+@layer base {
+  :root {
+    --background: var(--color-vault-off-white);
+    --foreground: var(--color-vault-black);
+    --primary: var(--color-vault-black);
+    --border: var(--color-vault-gray);
+  }
+
+  * {
+    @apply border-vault-gray;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    line-height: 1.7;
+    letter-spacing: 0.5px;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  code,
+  pre {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer components {
+  .vault-button {
+    @apply bg-vault-black text-white px-8 py-4 rounded-[2px] font-bold transition-all duration-300 hover:bg-vault-charcoal hover:scale-[1.03] active:scale-[0.98] active:shadow-inner disabled:bg-gray-400 disabled:opacity-60 disabled:cursor-not-allowed tracking-[0.1em] uppercase text-xs;
+  }
+
+  .vault-card {
+    @apply bg-white p-8 rounded-[4px] border border-black/[0.05] transition-all duration-500;
+  }
+
+  .vault-card:hover {
+    @apply border-black/[0.1];
+    box-shadow: var(--shadow-vault-deep);
+    transform: translateY(-4px);
+  }
+
+  .vault-input {
+    @apply bg-white border border-black/[0.1] rounded-[2px] px-4 py-3 focus:border-vault-black focus:outline-none transition-all duration-300 placeholder:text-vault-charcoal/20 text-sm font-medium;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-vault-off-white;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-black/10 rounded-full hover:bg-black/20 transition-colors;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes mesh {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(2%, 2%) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-1%, 3%) scale(0.9);
+  }
+
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.mesh-bg {
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(circle at 50% 50%, #E5E5E5 0%, transparent 60%),
+    radial-gradient(circle at 20% 40%, rgba(0, 0, 0, 0.02) 0%, transparent 40%),
+    radial-gradient(circle at 80% 60%, rgba(0, 0, 0, 0.03) 0%, transparent 40%);
+  filter: blur(60px);
+  animation: mesh 25s ease-in-out infinite alternate;
+  z-index: -20;
+}
