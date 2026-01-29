@@ -1,0 +1,40 @@
+# Backend Build Artifacts
+backend/build/
+backend/*.vdb
+backend/*.keys
+backend/vault_storage/
+backend/test_artifact.txt
+*.o
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.production.local
+frontend/.vercel
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
