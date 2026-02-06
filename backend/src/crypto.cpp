@@ -4,6 +4,7 @@
 #include <openssl/rand.h>
 #include <iomanip>
 #include <sstream>
+#include <cstring>
 
 namespace vault {
 
