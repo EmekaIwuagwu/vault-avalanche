@@ -1,7 +1,8 @@
 # Backend Build Artifacts
 backend/build/
-backend/*.vdb
+*.vdb
 backend/*.keys
+vault_data/
 backend/vault_storage/
 backend/test_artifact.txt
 *.o
