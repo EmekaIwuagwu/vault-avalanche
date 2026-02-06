@@ -49,11 +49,16 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$DIR"
 
 # Set NEXT_PUBLIC_API_URL so the frontend knows where the backend is
-# In Azure, the backend should be accessible via the public IP on port 8081
 export NEXT_PUBLIC_API_URL="http://$PUBLIC_IP:8081"
 
-# Build and start the containers
-sudo NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL docker compose up -d --build
+# Build and start the containers sequentially to avoid RAM issues on small VMs
+echo "Building Backend..."
+sudo docker compose build backend
+echo "Building Frontend (this may take a while)..."
+sudo NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL docker compose build frontend
+
+echo "Starting services..."
+sudo NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL docker compose up -d
 
 # 4. Success message
 echo "------------------------------------------------"
