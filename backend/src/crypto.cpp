@@ -23,6 +23,13 @@ std::string CryptoHelper::hashData(const std::vector<uint8_t>& data) {
 }
 
 std::vector<uint8_t> CryptoHelper::encrypt(const std::vector<uint8_t>& data, const std::string& key) {
+    if (key.length() < 32) {
+        // Fallback for sub-optimal keys - use first 32 bytes or pad with zeros
+        std::string padded_key = key;
+        padded_key.resize(32, '0');
+        return encrypt(data, padded_key);
+    }
+
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     std::vector<uint8_t> out(data.size() + EVP_MAX_BLOCK_LENGTH + 16);
     int len;
@@ -30,7 +37,7 @@ std::vector<uint8_t> CryptoHelper::encrypt(const std::vector<uint8_t>& data, con
 
     unsigned char iv[16];
     if (RAND_bytes(iv, 16) != 1) {
-        memset(iv, 0, 16); // Fallback
+        std::memset(iv, 0, 16); // Fallback
     }
 
     // Prepend IV to output
@@ -49,6 +56,11 @@ std::vector<uint8_t> CryptoHelper::encrypt(const std::vector<uint8_t>& data, con
 
 std::vector<uint8_t> CryptoHelper::decrypt(const std::vector<uint8_t>& data, const std::string& key) {
     if (data.size() < 16) return {};
+    
+    std::string working_key = key;
+    if (working_key.length() < 32) {
+        working_key.resize(32, '0');
+    }
 
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     std::vector<uint8_t> out(data.size());
@@ -58,10 +70,19 @@ std::vector<uint8_t> CryptoHelper::decrypt(const std::vector<uint8_t>& data, con
     unsigned char iv[16];
     std::memcpy(iv, data.data(), 16);
 
-    EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, (unsigned char*)key.c_str(), iv);
-    EVP_DecryptUpdate(ctx, out.data(), &len, data.data() + 16, data.size() - 16);
+    EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, (unsigned char*)working_key.c_str(), iv);
+    
+    if (EVP_DecryptUpdate(ctx, out.data(), &len, data.data() + 16, data.size() - 16) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return {};
+    }
     plaintext_len = len;
-    EVP_DecryptFinal_ex(ctx, out.data() + len, &len);
+    
+    if (EVP_DecryptFinal_ex(ctx, out.data() + len, &len) != 1) {
+        // If decryption fails (e.g. wrong key or corrupted data), return empty
+        EVP_CIPHER_CTX_free(ctx);
+        return {};
+    }
     plaintext_len += len;
 
     EVP_CIPHER_CTX_free(ctx);

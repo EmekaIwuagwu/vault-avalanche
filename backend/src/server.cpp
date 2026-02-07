@@ -16,8 +16,8 @@ static std::string getEncryptionKey() {
     if (env_key && std::strlen(env_key) == 32) {
         return std::string(env_key);
     }
-    // Default key for local development - MUST be changed in production
-    return "VaultSecure256BitKeyForAES!!";
+    // Default key for local development - MUST be 32 bytes for AES-256
+    return "VaultSecure256BitKeyForAES!!!!!!";
 }
 
 VaultServer::VaultServer(int port) : port(port) {
