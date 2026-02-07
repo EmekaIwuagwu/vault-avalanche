@@ -29,7 +29,21 @@ cd vault-avalanche
 
 ---
 
-## 3. Backend Setup (WSL)
+## 3. Quick Start (Run Both Together)
+
+If you are on Windows, you can launch both the Backend (in WSL) and the Frontend (in CMD) with a single command:
+
+1. Double-click `start-dev.bat` in the root directory.
+2. **OR** run it from CMD:
+   ```cmd
+   start-dev.bat
+   ```
+
+*This will open two separate terminal windows for the Backend and Frontend logs.*
+
+---
+
+## 4. Manual Setup (Step-by-Step)
 
 1. Open your **WSL Terminal**.
 2. Navigate to the backend directory:
