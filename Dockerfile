@@ -25,12 +25,16 @@ RUN npm run build
 # ==========================================
 # STAGE 3: Final Runner
 # ==========================================
-FROM node:20-slim AS runner
+FROM ubuntu:22.04 AS runner
 WORKDIR /app
 
-# Install runtime dependencies for the C++ backend
+# Install runtime dependencies: OpenSSL, Node.js, and CA Certificates
 RUN apt-get update && apt-get install -y \
-    libssl3 ca-certificates \
+    curl \
+    libssl-dev \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Create data directory for VaultDB
@@ -47,15 +51,15 @@ COPY --from=frontend-builder /app/.next ./.next
 COPY --from=frontend-builder /app/node_modules ./node_modules
 COPY --from=frontend-builder /app/package.json ./package.json
 
-# Expose Render's default port (typically 10000 or the $PORT env var)
+# Expose Render's default port ($PORT)
 EXPOSE 3000
 
 # Start script to run both
 RUN echo '#!/bin/sh\n\
 echo "Starting Backend on port 8081..."\n\
 cd /app/data && vault_server & \n\
-echo "Starting Frontend..."\n\
-cd /app && npm start\n\
+echo "Starting Frontend on port $PORT..."\n\
+cd /app && PORT=${PORT:-3000} npm start\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 CMD ["/app/start.sh"]

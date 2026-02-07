@@ -72,7 +72,7 @@ export default function Dashboard() {
             setCapacity(capacityData);
             setBackendStatus('online');
         } catch (err) {
-            setError('Cannot connect to VAULT backend engine on port 8081.');
+            setError('Cannot connect to VAULT backend engine. Please check if the service is starting.');
             setBackendStatus('offline');
         } finally {
             setIsLoading(false);
