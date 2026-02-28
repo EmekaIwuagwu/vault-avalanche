@@ -39,3 +39,20 @@ yarn-error.log*
 # Temporary files
 *.tmp
 *.temp
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Hardhat
+contracts/cache/
+contracts/artifacts/
+contracts/typechain-types/
+contracts/node_modules/
+contracts/package-lock.json
+contracts/artifacts/
+contracts/cache/
+
+# Backend scripts deps
+backend/scripts/node_modules/
+backend/scripts/package-lock.json

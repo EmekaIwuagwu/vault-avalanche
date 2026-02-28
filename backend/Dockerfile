@@ -21,16 +21,23 @@ RUN mkdir build && cd build && \
 # Production Stage
 FROM ubuntu:22.04 AS runner
 
-# Install runtime dependencies
+# Install runtime dependencies and Node.js for blockchain proxy
 RUN apt-get update && apt-get install -y \
     libssl3 \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a directory for data persistence
 WORKDIR /data
 
-# Copy the binary to a system path
+# Copy the binary and proxy scripts
 COPY --from=builder /app/build/vault_server /usr/local/bin/vault_server
+COPY --from=builder /app/scripts ./scripts
+
+# Initialize proxy dependencies
+RUN cd scripts && npm install
 
 # Expose the backend port
 EXPOSE 8081

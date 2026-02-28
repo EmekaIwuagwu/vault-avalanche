@@ -6,7 +6,11 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - VAULT_ENCRYPTION_KEY=VaultSecure256BitKeyForAES!! # Should be overridden in production
+      - VAULT_ENCRYPTION_KEY=${VAULT_ENCRYPTION_KEY:-VaultSecure256BitKeyForAES!!!!!!}
+      - VAULT_TOKEN_SECRET=${VAULT_TOKEN_SECRET:-vault_preview_token_secret_key}
+      - VAULT_SIGNER_PRIVATE_KEY=${VAULT_SIGNER_PRIVATE_KEY}
+      - AVALANCHE_FUJI_RPC_URL=${AVALANCHE_FUJI_RPC_URL:-https://api.avax-test.network/ext/bc/C/rpc}
+      - AVALANCHE_REGISTRY_ADDRESS=${AVALANCHE_REGISTRY_ADDRESS}
     volumes:
       - vault_data:/data
     restart: always

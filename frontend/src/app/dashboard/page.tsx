@@ -21,7 +21,13 @@ import {
     ChevronDown,
     Upload,
     RefreshCw,
-    Eye
+    Eye,
+    Folder as FolderIcon,
+    FolderPlus,
+    History,
+    ChevronRight,
+    Users,
+    CheckCircle2
 } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Progress } from '@/components/ui/progress'
@@ -36,8 +42,16 @@ import {
     checkHealth,
     formatFileSize,
     VaultFile,
+    Folder,
+    Version,
     CapacityInfo,
-    getPreviewUrl
+    getPreviewUrl,
+    fetchFolders,
+    createFolder,
+    fetchVersions,
+    restoreVersion,
+    createShareLink,
+    moveFile
 } from '@/lib/api'
 import { IpfsLogo } from '@/components/IpfsLogo'
 
@@ -48,27 +62,51 @@ export default function Dashboard() {
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const [files, setFiles] = useState<VaultFile[]>([])
+    const [folders, setFolders] = useState<Folder[]>([])
+    const [currentFolder, setCurrentFolder] = useState<number>(0)
     const [capacity, setCapacity] = useState<CapacityInfo | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isUploading, setIsUploading] = useState(false)
     const [isSharing, setIsSharing] = useState(false)
+    const [isCreatingFolder, setIsCreatingFolder] = useState(false)
+    const [newFolderName, setNewFolderName] = useState('')
     const [uploadProgress, setUploadProgress] = useState(0)
     const [uploadStep, setUploadStep] = useState('Queued')
     const [selectedFile, setSelectedFile] = useState<number | null>(null)
+    const [versions, setVersions] = useState<Version[]>([])
     const [view, setView] = useState('all')
     const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking')
     const [error, setError] = useState<string | null>(null)
+    const [success, setSuccess] = useState<string | null>(null)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [isMovingFile, setIsMovingFile] = useState(false)
+    const [movingFileId, setMovingFileId] = useState<number | null>(null)
+
+    const handleMoveFile = async (targetId: number) => {
+        if (!movingFileId) return;
+        try {
+            await moveFile(movingFileId, targetId);
+            setSuccess('Shard successfully re-routed');
+            loadData();
+            setIsMovingFile(false);
+            setMovingFileId(null);
+        } catch (err) {
+            setError('Failed to move shard to target directory');
+        }
+    };
 
     const loadData = useCallback(async () => {
         if (!address) return;
         try {
             setIsLoading(true);
             setError(null);
-            const [fileData, capacityData] = await Promise.all([
-                fetchFiles(),
+            const [fileData, folderData, capacityData] = await Promise.all([
+                fetchFiles(address),
+                fetchFolders(address),
                 fetchCapacity(address)
             ]);
             setFiles(fileData);
+            setFolders(folderData);
             setCapacity(capacityData);
             setBackendStatus('online');
         } catch (err) {
@@ -79,25 +117,30 @@ export default function Dashboard() {
         }
     }, [address]);
 
-    useEffect(() => {
-        if (!isConnected) {
-            router.push('/')
-            return
+    const loadVersions = async (fileId: number) => {
+        try {
+            const v = await fetchVersions(fileId);
+            setVersions(v);
+        } catch (err) {
+            console.error('Failed to load versions');
         }
-        loadData()
-    }, [isConnected, router, loadData])
+    }
 
     useEffect(() => {
-        const interval = setInterval(async () => {
-            try {
-                await checkHealth()
-                setBackendStatus('online')
-            } catch {
-                setBackendStatus('offline')
-            }
-        }, 10000)
-        return () => clearInterval(interval)
-    }, [])
+        if (selectedFile) loadVersions(selectedFile);
+    }, [selectedFile]);
+
+    const handleCreateFolder = async () => {
+        if (!newFolderName || !address) return;
+        try {
+            await createFolder(newFolderName, currentFolder, address);
+            setNewFolderName('');
+            setIsCreatingFolder(false);
+            loadData();
+        } catch (err) {
+            setError('Folder creation failed.');
+        }
+    }
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -118,7 +161,7 @@ export default function Dashboard() {
                 })
             }, 300)
 
-            await uploadFile(file, address)
+            await uploadFile(file, address, currentFolder)
 
             clearInterval(progressInterval)
             setUploadProgress(100)
@@ -224,6 +267,7 @@ export default function Dashboard() {
                         <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-vault-charcoal/40">Infrastructure</h3>
                         <nav className="flex flex-col gap-1">
                             <SidebarItem icon={<File size={18} />} label="All Storage" active={view === 'all'} onClick={() => setView('all')} />
+                            <SidebarItem icon={<Users size={18} />} label="Teams" active={view === 'teams'} onClick={() => router.push('/teams')} />
                             <SidebarItem icon={<Activity size={18} />} label="Activity Log" active={view === 'activity'} onClick={() => router.push('/activity')} />
                             <SidebarItem icon={<Database size={18} />} label="Node Mesh" active={view === 'nodes'} onClick={() => router.push('/nodes')} />
                             <SidebarItem icon={<Cloud size={18} />} label="API Deployments" active={view === 'deployments'} onClick={() => router.push('/deployments')} />
@@ -272,6 +316,8 @@ export default function Dashboard() {
                                     <input
                                         type="text"
                                         placeholder="Search shards..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
                                         className="vault-input pl-12 w-80 bg-white"
                                     />
                                 </div>
@@ -281,6 +327,13 @@ export default function Dashboard() {
                                     title="Refresh"
                                 >
                                     <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+                                </button>
+                                <button
+                                    onClick={() => setIsCreatingFolder(true)}
+                                    className="p-3 border border-black/[0.05] hover:bg-vault-off-white transition-colors rounded-[2px]"
+                                    title="New Folder"
+                                >
+                                    <FolderPlus size={18} />
                                 </button>
                                 <input
                                     type="file"
@@ -298,6 +351,17 @@ export default function Dashboard() {
                                 </button>
                             </div>
                         </header>
+
+                        {/* Breadcrumbs */}
+                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-black/40">
+                            <button onClick={() => setCurrentFolder(0)} className="hover:text-black transition-colors">Root</button>
+                            {currentFolder !== 0 && (
+                                <>
+                                    <ChevronRight size={12} />
+                                    <span className="text-black">{folders.find(f => f.id === currentFolder)?.name}</span>
+                                </>
+                            )}
+                        </div>
 
                         {/* Error Banner */}
                         <AnimatePresence>
@@ -355,42 +419,70 @@ export default function Dashboard() {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-black/[0.02]">
-                                                {files.map((file, idx) => (
-                                                    <motion.tr
-                                                        key={file.id}
-                                                        initial={{ opacity: 0, y: 10 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        transition={{ delay: idx * 0.05 }}
-                                                        className={`group hover:bg-vault-off-white transition-all cursor-pointer ${selectedFile === file.id ? 'bg-vault-off-white border-l-2 border-black' : ''}`}
-                                                        onClick={() => setSelectedFile(file.id)}
-                                                    >
-                                                        <td className="px-8 py-6">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="w-10 h-10 bg-black flex items-center justify-center rounded-[2px] group-hover:bg-vault-charcoal transition-colors shadow-lg">
-                                                                    <IpfsLogo className="w-5 h-5 text-white" />
+                                                {folders
+                                                    .filter(f => f.parentId === currentFolder && f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                    .map((folder, idx) => (
+                                                        <tr
+                                                            key={`folder-${folder.id}`}
+                                                            className="group hover:bg-vault-off-white transition-all cursor-pointer"
+                                                            onClick={() => setCurrentFolder(folder.id)}
+                                                        >
+                                                            <td className="px-8 py-6">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="w-10 h-10 bg-vault-charcoal flex items-center justify-center rounded-[2px] transition-colors shadow-sm">
+                                                                        <FolderIcon className="w-5 h-5 text-white" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="font-bold text-[15px] tracking-tight">{folder.name}</p>
+                                                                        <p className="text-[10px] font-mono text-black/30 italic">Cloud Folder</p>
+                                                                    </div>
                                                                 </div>
-                                                                <div>
-                                                                    <p className="font-bold text-[15px] tracking-tight">{file.name}</p>
-                                                                    <p className="text-[10px] font-mono text-black/30 truncate max-w-[140px] italic">{file.hash}</p>
+                                                            </td>
+                                                            <td className="px-8 py-6 text-center text-sm font-medium opacity-60 font-mono tracking-tighter">--</td>
+                                                            <td className="px-8 py-6 text-center">
+                                                                <span className="px-3 py-1 bg-black/5 text-black/40 text-[9px] font-bold uppercase rounded-full tracking-widest">Directory</span>
+                                                            </td>
+                                                            <td className="px-8 py-6 text-right"></td>
+                                                        </tr>
+                                                    ))}
+                                                {files
+                                                    .filter(f => f.folderId === currentFolder && f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                    .map((file, idx) => (
+                                                        <motion.tr
+                                                            key={file.id}
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ delay: idx * 0.05 }}
+                                                            className={`group hover:bg-vault-off-white transition-all cursor-pointer ${selectedFile === file.id ? 'bg-vault-off-white border-l-2 border-black' : ''}`}
+                                                            onClick={() => setSelectedFile(file.id)}
+                                                        >
+                                                            <td className="px-8 py-6">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="w-10 h-10 bg-black flex items-center justify-center rounded-[2px] group-hover:bg-vault-charcoal transition-colors shadow-lg">
+                                                                        <IpfsLogo className="w-5 h-5 text-white" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="font-bold text-[15px] tracking-tight">{file.name}</p>
+                                                                        <p className="text-[10px] font-mono text-black/30 truncate max-w-[140px] italic">{file.hash}</p>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-8 py-6 text-center text-sm font-medium opacity-60 font-mono tracking-tighter">{formatFileSize(file.size)}</td>
-                                                        <td className="px-8 py-6 text-center">
-                                                            <span className="px-3 py-1 bg-vault-success/10 text-vault-success text-[9px] font-bold uppercase rounded-full tracking-widest">Encrypted</span>
-                                                        </td>
-                                                        <td className="px-8 py-6 text-right opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                                            <div className="flex items-center justify-end gap-1">
-                                                                {file.name.toLowerCase().endsWith('.pdf') && (
-                                                                    <ActionBtn onClick={(e) => { e.stopPropagation(); handlePreview(file.id); }} icon={<Eye size={14} />} />
-                                                                )}
-                                                                <ActionBtn onClick={(e) => { e.stopPropagation(); handleDownload(file.id, file.name); }} icon={<Download size={14} />} />
-                                                                <ActionBtn onClick={(e) => { e.stopPropagation(); setIsSharing(true); }} icon={<Share2 size={14} />} />
-                                                                <ActionBtn onClick={(e) => { e.stopPropagation(); handleDelete(file.id); }} icon={<Trash2 size={14} />} alert />
-                                                            </div>
-                                                        </td>
-                                                    </motion.tr>
-                                                ))}
+                                                            </td>
+                                                            <td className="px-8 py-6 text-center text-sm font-medium opacity-60 font-mono tracking-tighter">{formatFileSize(file.size)}</td>
+                                                            <td className="px-8 py-6 text-center">
+                                                                <span className="px-3 py-1 bg-vault-success/10 text-vault-success text-[9px] font-bold uppercase rounded-full tracking-widest">Encrypted</span>
+                                                            </td>
+                                                            <td className="px-8 py-6 text-right opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                                                <div className="flex items-center justify-end gap-1">
+                                                                    {file.name.toLowerCase().endsWith('.pdf') && (
+                                                                        <ActionBtn onClick={(e) => { e.stopPropagation(); handlePreview(file.id); }} icon={<Eye size={14} />} />
+                                                                    )}
+                                                                    <ActionBtn onClick={(e) => { e.stopPropagation(); handleDownload(file.id, file.name); }} icon={<Download size={14} />} />
+                                                                    <ActionBtn onClick={(e) => { e.stopPropagation(); setIsSharing(true); }} icon={<Share2 size={14} />} />
+                                                                    <ActionBtn onClick={(e) => { e.stopPropagation(); handleDelete(file.id); }} icon={<Trash2 size={14} />} alert />
+                                                                </div>
+                                                            </td>
+                                                        </motion.tr>
+                                                    ))}
                                             </tbody>
                                         </table>
                                     </div>
@@ -432,6 +524,37 @@ export default function Dashboard() {
                                 <DetailRow label="Encryption Standard" value="AES-256-CBC" />
                                 <DetailRow label="Engine Version" value="VaultDB v1.0" />
                                 <DetailRow label="Data Integrity" value="SHA-256 Verified" />
+                            </div>
+
+                            <div className="space-y-4">
+                                <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-vault-charcoal/40 flex items-center gap-2">
+                                    <History size={12} /> Version History
+                                </h3>
+                                <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                                    {versions.length === 0 ? (
+                                        <p className="text-[10px] text-black/30 italic">No previous versions</p>
+                                    ) : versions.map(v => (
+                                        <div key={v.id} className="flex items-center justify-between p-3 bg-vault-off-white/50 rounded-[2px] border border-black/[0.03]">
+                                            <div>
+                                                <p className="text-[10px] font-bold">{v.date}</p>
+                                                <p className="text-[8px] font-mono opacity-40">{v.hash.slice(0, 16)}...</p>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm('Restore this version? current will become a version.')) {
+                                                        restoreVersion(selectedFileData.id, v.id).then(() => {
+                                                            loadData();
+                                                            loadVersions(selectedFileData.id);
+                                                        });
+                                                    }
+                                                }}
+                                                className="text-[9px] font-bold uppercase tracking-widest text-black/40 hover:text-black"
+                                            >
+                                                Restore
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="mt-auto space-y-4">
@@ -534,6 +657,105 @@ export default function Dashboard() {
                             <button onClick={() => setIsSharing(false)} className="w-full vault-button font-bold">Generate Ephemeral Keys</button>
                         </motion.div>
                     </div>
+                )}
+            </AnimatePresence>
+
+            {/* Create Folder Modal */}
+            <AnimatePresence>
+                {isCreatingFolder && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-8">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white v-full max-w-md p-12 rounded-[2px] space-y-10 shadow-2xl"
+                        >
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-3xl font-display font-medium">New Directory</h3>
+                                <button onClick={() => setIsCreatingFolder(false)} className="text-black/20 hover:text-black">✕</button>
+                            </div>
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">Folder Name</label>
+                                    <input
+                                        autoFocus
+                                        value={newFolderName}
+                                        onChange={(e) => setNewFolderName(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+                                        className="vault-input w-full bg-vault-off-white"
+                                        placeholder="Enter name..."
+                                    />
+                                </div>
+                            </div>
+                            <button onClick={handleCreateFolder} className="w-full vault-button font-bold">Create Shard Partition</button>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Move Shard Modal */}
+            <AnimatePresence>
+                {isMovingFile && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white w-full max-w-md rounded-[2px] shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-8 border-b border-black/[0.05]">
+                                <h3 className="text-xl font-display font-medium">Re-route Shard</h3>
+                                <p className="text-xs text-vault-charcoal/40 font-bold uppercase tracking-widest mt-1">Select target directory</p>
+                            </div>
+                            <div className="p-8 space-y-4 max-h-[300px] overflow-y-auto">
+                                <button
+                                    onClick={() => handleMoveFile(0)}
+                                    className="w-full p-4 border border-black/[0.05] hover:bg-vault-off-white transition-all text-left flex items-center gap-3 group"
+                                >
+                                    <div className="w-8 h-8 bg-black flex items-center justify-center rounded-[2px] group-hover:bg-vault-charcoal">
+                                        <FolderIcon size={14} className="text-white" />
+                                    </div>
+                                    <span className="font-bold text-xs uppercase tracking-widest">Root Directory</span>
+                                </button>
+                                {folders.map(folder => (
+                                    <button
+                                        key={folder.id}
+                                        onClick={() => handleMoveFile(folder.id)}
+                                        className="w-full p-4 border border-black/[0.05] hover:bg-vault-off-white transition-all text-left flex items-center gap-3 group"
+                                    >
+                                        <div className="w-8 h-8 bg-vault-charcoal flex items-center justify-center rounded-[2px] group-hover:bg-black">
+                                            <FolderIcon size={14} className="text-white" />
+                                        </div>
+                                        <span className="font-bold text-xs uppercase tracking-widest">{folder.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="p-8 bg-vault-off-white border-t border-black/[0.05] flex justify-end gap-3">
+                                <button
+                                    onClick={() => setIsMovingFile(false)}
+                                    className="px-6 py-2 text-[10px] font-bold uppercase tracking-[0.2em]"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Success/Error Toasts */}
+            <AnimatePresence>
+                {(error || success) && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 50 }}
+                        className={`fixed bottom-12 left-1/2 -translate-x-1/2 px-8 py-4 rounded-[2px] shadow-2xl flex items-center gap-4 z-[300] border ${error ? 'bg-vault-alert text-white border-vault-alert/20' : 'bg-black text-white border-white/10'}`}
+                    >
+                        {success ? <CheckCircle2 size={18} /> : <Shield size={18} />}
+                        <span className="text-xs font-bold uppercase tracking-widest">{error || success}</span>
+                        <button onClick={() => { setError(null); setSuccess(null); }} className="ml-4 opacity-40 hover:opacity-100">✕</button>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

@@ -1,0 +1,47 @@
+name: Vault Protocol CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libssl-dev
+    - name: Configure CMake
+      run: cmake -B build -S backend
+    - name: Build Backend
+      run: cmake --build build
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Install dependencies
+      run: cd frontend && npm install
+    - name: Build Frontend
+      run: cd frontend && npm run build
+
+  contracts-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Install dependencies
+      run: cd contracts && npm install
+    - name: Run Tests
+      run: cd contracts && npx hardhat test
