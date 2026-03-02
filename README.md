@@ -13,15 +13,18 @@
 
 **Vault** is a production-ready, decentralized cloud storage platform built on the Avalanche network. It transforms the security of blockchain technology into a high-performance cloud experience, offering enterprise-grade sharding, military-grade encryption, and real-time on-chain provenance.
 
+**🆕 Blockchain Integration Active**: Every file upload is automatically registered to the Avalanche Fuji testnet via the VaultRegistry smart contract, providing immutable proof of existence with transaction hash verification.
+
 ### 🎯 Key Features
 
 - **🚀 Native C++ Performance**: Custom VaultDB engine for sub-second file operations.
 - **🔒 Web3 Security**: AES-256-CBC encryption with EIP-191 wallet authentication.
 - **📂 Cloud Organization**: Hierarchical folder structures and team collaboration.
 - **🔄 File Versioning**: Automatic snapshotting and instant restoration of previous file states.
-- **🔗 On-Chain Provenance**: Permanent file registration and access control on Avalanche Fuji/Mainnet.
+- **🔗 On-Chain Provenance**: **Every file upload automatically registered to Avalanche blockchain** with immutable proof.
+- **⛓️ Smart Contract Integration**: VaultRegistry, VaultAccess, and VaultStorageTiers deployed on Fuji testnet.
 - **🌍 Multi-Language SDKs**: Native libraries for Rust, Python, Go, Ruby, PHP, and C#.
-- **📡 Public Sharing**: Secure, time-limited sharing links with cryptographic preview tokens.
+- **� Publric Sharing**: Secure, time-limited sharing links with cryptographic preview tokens.
 - **💎 Enterprise Scale**: 10TB storage allocation for all users during the promotional phase.
 
 ---
@@ -74,11 +77,30 @@ files = client.list_files()
 
 ## 🚀 DevOps & CI/CD
 
+### Environment Variables (Production)
+
+For blockchain integration, set these environment variables in your deployment platform (Render, AWS, etc.):
+
+```bash
+# Backend Blockchain Integration
+AVALANCHE_FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
+AVALANCHE_REGISTRY_ADDRESS=0x30c7e4Fcb29c8F935855b22931D773817b0Aa98A
+VAULT_SIGNER_PRIVATE_KEY=0xYourPrivateKeyWithAVAXForGas
+VAULT_ENCRYPTION_KEY=YourSecure32CharacterKeyHere!!
+
+# Frontend Configuration
+NEXT_PUBLIC_API_URL=https://your-backend-url.com
+NEXT_PUBLIC_CHAIN_ID=43113
+NEXT_PUBLIC_REGISTRY_ADDRESS=0x30c7e4Fcb29c8F935855b22931D773817b0Aa98A
+```
+
 ### Docker Compose
 Run the entire stack (Backend + Frontend) with a single command:
 ```bash
 docker-compose up -d
 ```
+
+The docker-compose.yml is pre-configured to read these environment variables from your host system.
 
 ### GitHub Actions
 The repository includes automated workflows for:
@@ -88,24 +110,49 @@ The repository includes automated workflows for:
 
 ---
 
-## 🔐 Smart Contracts
+## 🔐 Smart Contracts (Avalanche Fuji Testnet)
 
-Vault uses three core contracts deployed on Avalanche:
-1. **VaultRegistry**: On-chain file metadata and hash verification.
-2. **VaultAccess**: Decentralized access control and role management.
-3. **VaultStorageTiers**: Subscription and capacity management.
+Vault uses three core contracts deployed on Avalanche Fuji Testnet:
+
+1. **VaultRegistry** ([`0x30c7e4Fcb29c8F935855b22931D773817b0Aa98A`](https://testnet.snowtrace.io/address/0x30c7e4Fcb29c8F935855b22931D773817b0Aa98A))
+   - On-chain file metadata and hash verification
+   - Immutable proof of file existence
+   - Automatic registration on every upload
+
+2. **VaultAccess** ([`0xdF9896db7E338647e835F1C316b2D928A3A7E3CA`](https://testnet.snowtrace.io/address/0xdF9896db7E338647e835F1C316b2D928A3A7E3CA))
+   - Decentralized access control and role management
+   - Granular permission system (view, download, manage)
+
+3. **VaultStorageTiers** ([`0x90C118e8B4E17C55B0928E14C923bFa2e4EeaB3d`](https://testnet.snowtrace.io/address/0x90C118e8B4E17C55B0928E14C923bFa2e4EeaB3d))
+   - Subscription and capacity management
+   - 10TB free tier for all users
+
+**View all transactions**: [Snowtrace Testnet Explorer](https://testnet.snowtrace.io)
 
 ---
 
 ## 🗺️ Roadmap (Updated Q1 2026)
 
-- [x] VaultDB custom engine & AES-256 Encryption.
-- [x] Hierarchical Folders & Team Management.
-- [x] File Versioning & Restoration logic.
-- [x] Public Sharing with Preview Tokens.
-- [x] On-chain Provenance Contracts (Solidity).
-- [x] Multi-Language SDK Suite (Rust, Python, Go, etc.).
-- [x] CI/CD Pipeline & Docker Orchestration.
+- [x] VaultDB custom engine & AES-256 Encryption
+- [x] Hierarchical Folders & Team Management
+- [x] File Versioning & Restoration logic
+- [x] Public Sharing with Preview Tokens
+- [x] **Smart Contracts Deployed on Avalanche Fuji Testnet**
+- [x] **Blockchain Integration - Automatic On-Chain File Registration**
+- [x] Multi-Language SDK Suite (Rust, Python, Go, etc.)
+- [x] CI/CD Pipeline & Docker Orchestration
+- [ ] Deploy to Avalanche C-Chain Mainnet
+- [ ] IPFS integration for redundancy
+- [ ] Mobile SDK (React Native)
+
+---
+
+## 🔗 Live Deployment
+
+- **Frontend**: [vault.avalanche.app](https://vault.avalanche.app) *(if applicable)*
+- **Backend API**: Production endpoint
+- **Blockchain**: Avalanche Fuji Testnet (C-Chain)
+- **Explorer**: [View Contracts on Snowtrace](https://testnet.snowtrace.io/address/0x30c7e4Fcb29c8F935855b22931D773817b0Aa98A)
 
 ---
 
