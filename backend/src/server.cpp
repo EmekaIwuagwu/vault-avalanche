@@ -267,6 +267,33 @@ void VaultServer::run() {
         }
     });
 
+    // Preview File (Inline)
+    svr.Get("/api/preview/(\\d+)", [this](const httplib::Request& req, httplib::Response& res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
+        int id = std::stoi(req.matches[1]);
+        auto meta = storage->getFileMetadata(id);
+        
+        if (meta.id != 0) {
+            auto encrypted = storage->getFile(id);
+            if (!encrypted.empty()) {
+                auto decrypted = CryptoHelper::decrypt(encrypted, getEncryptionKey());
+                std::string content_type = std::string(meta.content_type);
+                if (content_type.empty() || content_type == "application/octet-stream") {
+                    // Heuristic for common types if missing
+                    std::string fname = meta.filename;
+                    if (fname.find(".pdf") != std::string::npos) content_type = "application/pdf";
+                    else if (fname.find(".png") != std::string::npos) content_type = "image/png";
+                    else if (fname.find(".jpg") != std::string::npos) content_type = "image/jpeg";
+                }
+                
+                res.set_header("Content-Disposition", "inline; filename=\"" + std::string(meta.filename) + "\"");
+                res.set_content(reinterpret_cast<const char*>(decrypted.data()), decrypted.size(), content_type.c_str());
+                return;
+            }
+        }
+        res.status = 404;
+    });
+
     // Teams
     svr.Post("/api/teams", [this, get_wallet](const httplib::Request& req, httplib::Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
