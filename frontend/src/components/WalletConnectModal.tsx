@@ -11,6 +11,7 @@ export function WalletConnectModal({ isOpen, onClose }: { isOpen: boolean, onClo
 
     // Filter connectors to avoid duplicates (e.g., metaMask and generic injected)
     const activeConnectors = connectors.filter((c, index, self) =>
+        // Filter out purely redundant "injected" when specific EIP-6963 ones are present
         index === self.findIndex((t) => (t.id === c.id))
     )
 
@@ -50,7 +51,7 @@ export function WalletConnectModal({ isOpen, onClose }: { isOpen: boolean, onClo
                     </div>
 
                     <div className="space-y-4">
-                        {activeConnectors.map((connector) => (
+                        {activeConnectors.map((connector: any) => (
                             <button
                                 key={connector.id}
                                 onClick={() => connect({ connector })}
@@ -58,9 +59,11 @@ export function WalletConnectModal({ isOpen, onClose }: { isOpen: boolean, onClo
                                 className="w-full flex items-center justify-between p-6 border border-black/[0.05] hover:border-black hover:bg-vault-off-white transition-all rounded-[4px] group relative overflow-hidden disabled:opacity-50"
                             >
                                 <div className="flex items-center gap-6 relative z-10">
-                                    <div className="w-14 h-14 bg-black flex items-center justify-center rounded-[2px] group-hover:scale-105 transition-transform">
-                                        {connector.id.toLowerCase().includes('metamask') ? (
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Logo.svg" className="w-8 h-8" alt="MetaMask" />
+                                    <div className="w-14 h-14 bg-black flex items-center justify-center rounded-[2px] group-hover:scale-105 transition-transform overflow-hidden">
+                                        {connector.icon ? (
+                                            <img src={connector.icon} className="w-8 h-8 object-contain" alt={connector.name} />
+                                        ) : connector.id.toLowerCase().includes('metamask') ? (
+                                            <img src="https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg" className="w-8 h-8 object-contain" alt="MetaMask" />
                                         ) : connector.id.toLowerCase().includes('coinbase') ? (
                                             <Database size={24} className="text-white" />
                                         ) : (
@@ -72,7 +75,7 @@ export function WalletConnectModal({ isOpen, onClose }: { isOpen: boolean, onClo
                                             {connector.name}
                                         </span>
                                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">
-                                            {connector.id === 'injected' ? 'External Injected Provider' : 'Native Web3 Gateway'}
+                                            {connector.id === 'injected' ? 'External Provider' : 'Native Web3 Gateway'}
                                         </span>
                                     </div>
                                 </div>

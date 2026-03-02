@@ -9,10 +9,9 @@ export const config = createConfig({
         injected({
             shimDisconnect: true,
         }),
-        metaMask(),
         coinbaseWallet({
             appName: 'VAULT',
-            preference: 'smartWalletOnly'
+            preference: 'all' // Shows both extension and SDK
         }),
     ],
     ssr: true,

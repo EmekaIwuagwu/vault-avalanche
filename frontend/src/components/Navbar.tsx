@@ -15,7 +15,7 @@ export function Navbar() {
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     const handleLogin = () => {
-        const mm = connectors.find((c: any) => c.id === 'metaMask')
+        const mm = connectors.find((c: any) => c.id === 'metaMask' || c.id === 'io.metamask')
         const inj = connectors.find((c: any) => c.id === 'injected')
         const preferred = mm || inj || connectors[0]
 

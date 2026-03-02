@@ -23,7 +23,7 @@ export default function LandingPage() {
 
   const handleLogin = () => {
     // Try to connect the specific MetaMask connector or first injected one directly
-    const mm = connectors.find((c: any) => c.id === 'metaMask')
+    const mm = connectors.find((c: any) => c.id === 'metaMask' || c.id === 'io.metamask')
     const inj = connectors.find((c: any) => c.id === 'injected')
     const preferred = mm || inj || connectors[0]
 
