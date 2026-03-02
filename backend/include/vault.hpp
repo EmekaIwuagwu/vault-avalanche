@@ -246,6 +246,7 @@ public:
     bool inviteToTeam(uint32_t team_id, const std::string& member_wallet, const std::string& role);
     std::vector<TeamMetadata> listTeams(const std::string& wallet);
     std::vector<FileMetadata> listTeamFiles(uint32_t team_id);
+    std::vector<TeamMemberMetadata> listTeamMembers(uint32_t team_id);
     
     // Activity logging
     void logActivity(const std::string& type, const std::string& status, const std::string& resource, const std::string& node, const std::string& hash, const std::string& wallet);
