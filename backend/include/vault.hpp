@@ -7,6 +7,7 @@
 #include <map>
 #include <mutex>
 #include <cstdint>
+#include <fstream>
 
 namespace vault {
 
