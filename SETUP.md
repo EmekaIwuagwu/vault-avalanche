@@ -98,6 +98,21 @@ chmod +x azure-deploy.sh
 
 ---
 
+## 6. Deployment (Render.com) - Anti-Sleep Config
+
+Render's free tier services sleep after 15 minutes of inactivity. To prevent this, Vault has a built-in "Keep-Alive" monitoring system.
+
+1. **Environment Variables**: In your Render dashboard (for both Frontend and Backend), set these two environment variables:
+   - `PUBLIC_BACKEND_URL`: The public URL of your backend (e.g., `https://vault-backend.onrender.com`)
+   - `PUBLIC_FRONTEND_URL`: The public URL of your frontend (e.g., `https://vault-front.onrender.com`)
+
+2. **How it works**:
+   - The **Backend** (C++) runs a background thread that pings both URLs every 13 minutes.
+   - The **Frontend** (Next.js) uses an `instrumentation` hook to run a periodic pinger that does the same.
+   - This ensures that as long as one service is awake, it will keep the other (and itself) awake.
+
+---
+
 ## Troubleshooting
 
 - **PDF Files Corrupted?**: Ensure you have pulled the latest changes with `git pull`. Previous uploads might remain corrupted; delete them and upload new ones.
