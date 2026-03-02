@@ -535,5 +535,5 @@ void VaultServer::run() {
     std::cout << "VAULT Engine v2.0 running on port " << port << std::endl;
     std::cout.flush();
     svr.listen("0.0.0.0", port);
-
+}
 } // namespace vault
