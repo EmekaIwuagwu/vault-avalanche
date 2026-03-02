@@ -507,29 +507,33 @@ void VaultServer::run() {
         
         if (backend_url || frontend_url) {
             std::cout << "[Keep-Alive] Started monitoring thread" << std::endl;
+            std::cout.flush();
             while (true) {
                 // Wait 13 minutes (Render's limit is 15 mins)
                 std::this_thread::sleep_for(std::chrono::minutes(13));
                 
                 if (backend_url) {
                     std::cout << "[Keep-Alive] Pinging backend: " << backend_url << std::endl;
+                    std::cout.flush();
                     std::string cmd = "curl -s " + std::string(backend_url) + "/health > /dev/null &";
                     (void)std::system(cmd.c_str());
                 }
                 
                 if (frontend_url) {
                     std::cout << "[Keep-Alive] Pinging frontend: " << frontend_url << std::endl;
+                    std::cout.flush();
                     std::string cmd = "curl -s " + std::string(frontend_url) + "/api/health > /dev/null &";
                     (void)std::system(cmd.c_str());
                 }
             }
         } else {
             std::cout << "[Keep-Alive] No URLs provided (PUBLIC_BACKEND_URL/PUBLIC_FRONTEND_URL), skipping ping thread" << std::endl;
+            std::cout.flush();
         }
     }).detach();
 
     std::cout << "VAULT Engine v2.0 running on port " << port << std::endl;
+    std::cout.flush();
     svr.listen("0.0.0.0", port);
-}
 
 } // namespace vault

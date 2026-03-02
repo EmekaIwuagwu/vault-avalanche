@@ -56,10 +56,21 @@ EXPOSE 3000
 
 # Start script to run both
 RUN echo '#!/bin/sh\n\
-echo "Starting Backend on port 8081..."\n\
-cd /app/data && vault_server & \n\
+echo "Protocol Initialization: Starting Vault Engine..."\n\
+# Run backend in background and log to a file we can tail\n\
+/usr/local/bin/vault_server > /app/backend.log 2>&1 & \n\
+\n\
+# Wait for backend to start\n\
+sleep 5\n\
+if grep -q "VAULT Engine" /app/backend.log; then\n\
+    echo "✓ Vault Engine stable on port 8081"\n\
+else\n\
+    echo "⚠ Vault Engine startup warning. Checking log..."\n\
+    cat /app/backend.log\n\
+fi\n\
+\n\
 echo "Starting Frontend on port $PORT..."\n\
-cd /app && PORT=${PORT:-3000} npm start\n\
+PORT=${PORT:-3000} npm start\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 CMD ["/app/start.sh"]
