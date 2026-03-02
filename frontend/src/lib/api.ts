@@ -236,6 +236,18 @@ export async function checkHealth(): Promise<HealthStatus> {
     return response.json();
 }
 
+export async function generateApiKey(walletAddress: string): Promise<{ status: string; key: string; type: string; created: number }> {
+    const response = await fetch(`${API_BASE_URL}/api/keys/generate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ wallet: walletAddress })
+    });
+    if (!response.ok) throw new Error('Failed to generate API key');
+    return response.json();
+}
+
 export async function moveFile(fileId: number, targetFolderId: number): Promise<{ status: string }> {
     const response = await fetch(`${API_BASE_URL}/api/files/${fileId}/move`, {
         method: 'POST',

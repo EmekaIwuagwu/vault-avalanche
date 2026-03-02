@@ -8,6 +8,7 @@
 #include <mutex>
 #include <cstdint>
 #include <fstream>
+#include <cstring>
 
 namespace vault {
 
