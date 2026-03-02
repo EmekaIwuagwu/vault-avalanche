@@ -96,6 +96,16 @@ void VaultServer::run() {
             int id = storage->storeFile(fname, encrypted, hash, wallet, content_type, folder_id, team_id);
             storage->logActivity("Upload", "Success", fname, "Vault Node", hash, wallet);
             
+            // Register file on Avalanche blockchain
+            bool onChainSuccess = BlockchainHelper::registerFileOnChain(wallet, std::to_string(id), hash, data.size(), 12);
+            if (onChainSuccess) {
+                std::cout << "[Blockchain] File registered on-chain successfully" << std::endl;
+                storage->logActivity("Blockchain", "Success", fname, "Avalanche Fuji", hash, wallet);
+            } else {
+                std::cout << "[Blockchain] Warning: On-chain registration failed, file stored locally" << std::endl;
+                storage->logActivity("Blockchain", "Warning", fname, "Avalanche Fuji", hash, wallet);
+            }
+            
             res.set_content(json({{"status", "success"}, {"id", id}}).dump(), "application/json");
         } else if (!req.body.empty()) {
             std::vector<uint8_t> data(req.body.begin(), req.body.end());
@@ -106,6 +116,16 @@ void VaultServer::run() {
             
             int id = storage->storeFile(filename, encrypted, hash, wallet, "application/octet-stream", folder_id, team_id);
             storage->logActivity("Upload", "Success", filename, "Vault Node", hash, wallet);
+            
+            // Register file on Avalanche blockchain
+            bool onChainSuccess = BlockchainHelper::registerFileOnChain(wallet, std::to_string(id), hash, data.size(), 12);
+            if (onChainSuccess) {
+                std::cout << "[Blockchain] File registered on-chain successfully" << std::endl;
+                storage->logActivity("Blockchain", "Success", filename, "Avalanche Fuji", hash, wallet);
+            } else {
+                std::cout << "[Blockchain] Warning: On-chain registration failed, file stored locally" << std::endl;
+                storage->logActivity("Blockchain", "Warning", filename, "Avalanche Fuji", hash, wallet);
+            }
             
             res.set_content(json({{"status", "success"}, {"id", id}}).dump(), "application/json");
         } else {
