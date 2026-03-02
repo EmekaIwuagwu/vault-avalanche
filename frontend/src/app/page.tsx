@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
-import { useAccount } from 'wagmi'
+import { useAccount, useConnect } from 'wagmi'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
@@ -17,8 +17,22 @@ import { WalletConnectModal } from '@/components/WalletConnectModal'
 
 export default function LandingPage() {
   const { isConnected } = useAccount()
+  const { connect, connectors, isPending } = useConnect()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const router = useRouter()
+
+  const handleLogin = () => {
+    // Try to connect the specific MetaMask connector or first injected one directly
+    const mm = connectors.find((c: any) => c.id === 'metaMask')
+    const inj = connectors.find((c: any) => c.id === 'injected')
+    const preferred = mm || inj || connectors[0]
+
+    if (preferred && connectors.length <= 2) { // If only common ones found, try to connect directly
+      connect({ connector: preferred })
+    } else {
+      setIsModalOpen(true)
+    }
+  }
 
   useEffect(() => {
     if (isConnected) {
@@ -70,11 +84,12 @@ export default function LandingPage() {
               className="pt-12 flex flex-col md:flex-row items-center justify-center gap-6"
             >
               <button
-                onClick={() => setIsModalOpen(true)}
-                className="vault-button px-14 py-6 text-xl group flex items-center gap-4 relative overflow-hidden active:scale-95 transition-transform"
+                onClick={handleLogin}
+                className="vault-button px-14 py-6 text-xl group flex items-center gap-4 relative overflow-hidden active:scale-95 transition-all shadow-[0_20px_50px_rgba(0,0,0,0.1)] hover:shadow-[0_40px_80px_rgba(0,0,0,0.2)]"
+                disabled={isPending}
               >
-                <span className="relative z-10">Connect Wallet</span>
-                <Wallet size={24} className="group-hover:translate-x-1.5 transition-transform relative z-10" />
+                <span className="relative z-10">{isPending ? 'Connecting...' : 'Connect Wallet'}</span>
+                <Wallet size={24} className={`group-hover:translate-x-1.5 transition-transform relative z-10 ${isPending ? 'animate-bounce' : ''}`} />
                 <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
               </button>
               <Link href="/whitepaper" className="px-14 py-6 border border-black hover:bg-black hover:text-white transition-all text-sm font-bold uppercase tracking-[0.3em] rounded-[2px] backdrop-blur-sm">

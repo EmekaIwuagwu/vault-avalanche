@@ -1,12 +1,19 @@
 import { http, createConfig } from 'wagmi'
 import { avalanche, avalancheFuji } from 'wagmi/chains'
-import { injected, coinbaseWallet } from 'wagmi/connectors'
+import { injected, coinbaseWallet, metaMask } from 'wagmi/connectors'
 
 export const config = createConfig({
-    chains: [avalanche, avalancheFuji],
+    chains: [avalancheFuji, avalanche],
+    multiInjectedProviderDiscovery: true,
     connectors: [
-        injected(), // This will handle MetaMask, Core, and official Avalanche wallets
-        coinbaseWallet({ appName: 'VAULT' }),
+        injected({
+            shimDisconnect: true,
+        }),
+        metaMask(),
+        coinbaseWallet({
+            appName: 'VAULT',
+            preference: 'smartWalletOnly'
+        }),
     ],
     ssr: true,
     transports: {

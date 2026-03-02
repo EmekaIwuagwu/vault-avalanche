@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useAccount, useDisconnect } from 'wagmi'
+import { useAccount, useDisconnect, useConnect } from 'wagmi'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Wallet, LogOut, ChevronRight } from 'lucide-react'
 import { IpfsLogo } from './IpfsLogo'
@@ -10,8 +10,21 @@ import { WalletConnectModal } from './WalletConnectModal'
 
 export function Navbar() {
     const { address, isConnected } = useAccount()
+    const { connect, connectors, isPending } = useConnect()
     const { disconnect } = useDisconnect()
     const [isModalOpen, setIsModalOpen] = useState(false)
+
+    const handleLogin = () => {
+        const mm = connectors.find((c: any) => c.id === 'metaMask')
+        const inj = connectors.find((c: any) => c.id === 'injected')
+        const preferred = mm || inj || connectors[0]
+
+        if (preferred && connectors.length <= 2) {
+            connect({ connector: preferred })
+        } else {
+            setIsModalOpen(true)
+        }
+    }
 
     return (
         <>
@@ -74,11 +87,12 @@ export function Navbar() {
                                 exit={{ opacity: 0, x: -20 }}
                             >
                                 <button
-                                    onClick={() => setIsModalOpen(true)}
+                                    onClick={handleLogin}
+                                    disabled={isPending}
                                     className="vault-button py-2.5 px-6 flex items-center gap-2 text-xs"
                                 >
-                                    <Wallet size={16} />
-                                    Connect Wallet
+                                    <Wallet size={16} className={isPending ? 'animate-bounce' : ''} />
+                                    {isPending ? 'Connecting...' : 'Connect Wallet'}
                                 </button>
                             </motion.div>
                         )}
