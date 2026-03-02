@@ -440,7 +440,9 @@ void VaultServer::run() {
                 {"status", std::string(log.status)},
                 {"name", std::string(log.resource_name)},
                 {"time", std::string(log.timestamp)},
-                {"wallet", std::string(log.wallet_address)}
+                {"wallet", std::string(log.wallet_address)},
+                {"hash", std::string(log.hash)},
+                {"nodes", std::string(log.node_info)}
             });
         }
         res.set_content(j.dump(), "application/json");

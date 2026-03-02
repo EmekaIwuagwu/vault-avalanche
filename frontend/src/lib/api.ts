@@ -37,6 +37,8 @@ export interface ActivityLog {
     name: string;
     time: string;
     wallet: string;
+    hash: string;
+    nodes: string;
 }
 
 export interface CapacityInfo {
