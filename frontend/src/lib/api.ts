@@ -75,7 +75,7 @@ export async function fetchFiles(walletAddress?: string): Promise<VaultFile[]> {
     return response.json();
 }
 
-export async function uploadFile(file: File, walletAddress: string, folderId: number = 0, teamId: number = 0): Promise<{ status: string; id: number }> {
+export async function uploadFile(file: File, walletAddress: string, folderId: number = 0, teamId: number = 0): Promise<{ status: string; id: number; txHash?: string; explorer?: string; warning?: string }> {
     const formData = new FormData();
     formData.append('file', file);
 

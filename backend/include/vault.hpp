@@ -307,7 +307,7 @@ public:
 
 class BlockchainHelper {
 public:
-    static bool registerFileOnChain(const std::string& owner, const std::string& fileId, const std::string& hashStr, uint64_t size, uint32_t shards);
+    static std::string registerFileOnChain(const std::string& owner, const std::string& fileId, const std::string& hashStr, uint64_t size, uint32_t shards);
     static std::string getOnChainRecord(const std::string& fileId);
 };
 

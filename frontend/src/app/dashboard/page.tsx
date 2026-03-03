@@ -72,6 +72,7 @@ export default function Dashboard() {
     const [newFolderName, setNewFolderName] = useState('')
     const [uploadProgress, setUploadProgress] = useState(0)
     const [uploadStep, setUploadStep] = useState('Queued')
+    const [uploadTxHash, setUploadTxHash] = useState<string | null>(null)
     const [selectedFile, setSelectedFile] = useState<number | null>(null)
     const [versions, setVersions] = useState<Version[]>([])
     const [view, setView] = useState('all')
@@ -149,6 +150,7 @@ export default function Dashboard() {
         setIsUploading(true)
         setUploadProgress(0)
         setUploadStep('Preparing encrypted shards...')
+        setUploadTxHash(null)
 
         try {
             const progressInterval = setInterval(() => {
@@ -161,17 +163,24 @@ export default function Dashboard() {
                 })
             }, 300)
 
-            await uploadFile(file, address, currentFolder)
+            const result = await uploadFile(file, address, currentFolder)
 
             clearInterval(progressInterval)
             setUploadProgress(100)
-            setUploadStep('Protocol Complete!')
+            
+            if (result.txHash) {
+                setUploadStep('✅ Registered on Avalanche!')
+                setUploadTxHash(result.txHash)
+            } else {
+                setUploadStep('Protocol Complete!')
+            }
 
             setTimeout(() => {
                 setIsUploading(false)
+                setUploadTxHash(null)
                 loadData()
                 refetchBalance?.()
-            }, 1000)
+            }, 3000)
         } catch (err) {
             setError('Upload sequence failed at the engine level.')
             setIsUploading(false)
@@ -618,6 +627,32 @@ export default function Dashboard() {
                                         />
                                     </div>
                                 </div>
+
+                                {uploadTxHash && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-vault-success/10 border border-vault-success/20 rounded-[4px] p-6 space-y-4"
+                                    >
+                                        <div className="flex items-center gap-2 text-vault-success">
+                                            <CheckCircle2 size={18} />
+                                            <span className="text-[11px] font-bold uppercase tracking-widest">Blockchain Confirmed</span>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">Transaction Hash</p>
+                                            <p className="font-mono text-xs break-all text-vault-charcoal/70">{uploadTxHash}</p>
+                                        </div>
+                                        <a
+                                            href={`https://testnet.snowtrace.io/tx/${uploadTxHash}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-black text-white text-[10px] font-bold uppercase tracking-widest rounded-[2px] hover:bg-vault-charcoal transition-colors"
+                                        >
+                                            <ExternalLink size={14} />
+                                            View on Snowtrace
+                                        </a>
+                                    </motion.div>
+                                )}
                             </div>
 
                             <div className="flex items-center justify-center gap-2 opacity-30">

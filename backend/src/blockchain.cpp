@@ -57,7 +57,7 @@ static std::string exec(const std::string& cmd) {
     return result;
 }
 
-bool BlockchainHelper::registerFileOnChain(const std::string& owner, const std::string& fileId, const std::string& hashStr, uint64_t size, uint32_t shards) {
+std::string BlockchainHelper::registerFileOnChain(const std::string& owner, const std::string& fileId, const std::string& hashStr, uint64_t size, uint32_t shards) {
     std::string cmd = "node scripts/blockchain_proxy.js register " + owner + " " + fileId + " " + hashStr + " " + std::to_string(size) + " " + std::to_string(shards);
     std::cout << "[Blockchain] Executing: " << cmd << std::endl;
     
@@ -66,10 +66,13 @@ bool BlockchainHelper::registerFileOnChain(const std::string& owner, const std::
     
     try {
         auto j = json::parse(output);
-        return j.contains("txHash");
+        if (j.contains("txHash")) {
+            return j["txHash"].get<std::string>();
+        }
     } catch (...) {
-        return false;
+        return "";
     }
+    return "";
 }
 
 std::string BlockchainHelper::getOnChainRecord(const std::string& fileId) {

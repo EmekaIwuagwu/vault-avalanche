@@ -100,16 +100,26 @@ void VaultServer::run() {
             storage->logActivity("Upload", "Success", fname, "Vault Node", hash, wallet);
             
             // Register file on Avalanche blockchain
-            bool onChainSuccess = BlockchainHelper::registerFileOnChain(wallet, std::to_string(id), hash, data.size(), 12);
-            if (onChainSuccess) {
-                std::cout << "[Blockchain] File registered on-chain successfully" << std::endl;
-                storage->logActivity("Blockchain", "Success", fname, "Avalanche Fuji", hash, wallet);
+            std::string txHash = BlockchainHelper::registerFileOnChain(wallet, std::to_string(id), hash, data.size(), 12);
+            if (!txHash.empty()) {
+                std::cout << "[Blockchain] File registered on-chain successfully. TxHash: " << txHash << std::endl;
+                storage->logActivity("Blockchain", "Success", fname, "Avalanche Fuji", txHash, wallet);
+                res.set_content(json({
+                    {"status", "success"}, 
+                    {"id", id},
+                    {"txHash", txHash},
+                    {"explorer", "https://testnet.snowtrace.io/tx/" + txHash}
+                }).dump(), "application/json");
             } else {
                 std::cout << "[Blockchain] Warning: On-chain registration failed, file stored locally" << std::endl;
                 storage->logActivity("Blockchain", "Warning", fname, "Avalanche Fuji", hash, wallet);
+                res.set_content(json({
+                    {"status", "success"}, 
+                    {"id", id},
+                    {"txHash", ""},
+                    {"warning", "File stored locally, blockchain registration failed"}
+                }).dump(), "application/json");
             }
-            
-            res.set_content(json({{"status", "success"}, {"id", id}}).dump(), "application/json");
         } else if (!req.body.empty()) {
             std::vector<uint8_t> data(req.body.begin(), req.body.end());
             std::string hash = CryptoHelper::hashData(data);
@@ -121,16 +131,26 @@ void VaultServer::run() {
             storage->logActivity("Upload", "Success", filename, "Vault Node", hash, wallet);
             
             // Register file on Avalanche blockchain
-            bool onChainSuccess = BlockchainHelper::registerFileOnChain(wallet, std::to_string(id), hash, data.size(), 12);
-            if (onChainSuccess) {
-                std::cout << "[Blockchain] File registered on-chain successfully" << std::endl;
-                storage->logActivity("Blockchain", "Success", filename, "Avalanche Fuji", hash, wallet);
+            std::string txHash = BlockchainHelper::registerFileOnChain(wallet, std::to_string(id), hash, data.size(), 12);
+            if (!txHash.empty()) {
+                std::cout << "[Blockchain] File registered on-chain successfully. TxHash: " << txHash << std::endl;
+                storage->logActivity("Blockchain", "Success", filename, "Avalanche Fuji", txHash, wallet);
+                res.set_content(json({
+                    {"status", "success"}, 
+                    {"id", id},
+                    {"txHash", txHash},
+                    {"explorer", "https://testnet.snowtrace.io/tx/" + txHash}
+                }).dump(), "application/json");
             } else {
                 std::cout << "[Blockchain] Warning: On-chain registration failed, file stored locally" << std::endl;
                 storage->logActivity("Blockchain", "Warning", filename, "Avalanche Fuji", hash, wallet);
+                res.set_content(json({
+                    {"status", "success"}, 
+                    {"id", id},
+                    {"txHash", ""},
+                    {"warning", "File stored locally, blockchain registration failed"}
+                }).dump(), "application/json");
             }
-            
-            res.set_content(json({{"status", "success"}, {"id", id}}).dump(), "application/json");
         } else {
             res.status = 400;
             res.set_content("{\"error\": \"No file uploaded\"}", "application/json");
