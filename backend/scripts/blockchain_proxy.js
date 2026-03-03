@@ -1,5 +1,10 @@
 const { ethers } = require("ethers");
-require("dotenv").config();
+
+try {
+    require("dotenv").config();
+} catch (e) {
+    console.error("[Blockchain Proxy] dotenv not available, using system environment variables");
+}
 
 const ABI = [
     "function registerFile(address owner, string fileId, bytes32 sha256Hash, uint256 fileSize, uint256 shardCount, uint256 timestamp) external",
@@ -11,6 +16,12 @@ async function main() {
     const rpcUrl = process.env.AVALANCHE_FUJI_RPC_URL || "https://api.avax-test.network/ext/bc/C/rpc";
     const privateKey = process.env.VAULT_SIGNER_PRIVATE_KEY;
     const contractAddress = process.env.AVALANCHE_REGISTRY_ADDRESS;
+
+    // Debug logging
+    console.error("[Blockchain Proxy] Command:", command);
+    console.error("[Blockchain Proxy] RPC URL:", rpcUrl);
+    console.error("[Blockchain Proxy] Contract Address:", contractAddress ? "SET" : "MISSING");
+    console.error("[Blockchain Proxy] Private Key:", privateKey ? "SET" : "MISSING");
 
     if (!contractAddress) {
         process.stdout.write(JSON.stringify({ error: "Missing AVALANCHE_REGISTRY_ADDRESS" }));
@@ -25,20 +36,36 @@ async function main() {
             process.stdout.write(JSON.stringify({ error: "Missing VAULT_SIGNER_PRIVATE_KEY" }));
             process.exit(1);
         }
-        const wallet = new ethers.Wallet(privateKey, provider);
-        const contractWithSigner = contract.connect(wallet);
+        
+        try {
+            const wallet = new ethers.Wallet(privateKey, provider);
+            const contractWithSigner = contract.connect(wallet);
 
-        const [owner, fileId, hash, size, shards] = process.argv.slice(3);
-        const tx = await contractWithSigner.registerFile(
-            owner,
-            fileId,
-            hash.startsWith("0x") ? hash : "0x" + hash,
-            size,
-            shards,
-            Math.floor(Date.now() / 1000)
-        );
-        const receipt = await tx.wait();
-        process.stdout.write(JSON.stringify({ status: "success", txHash: receipt.transactionHash }));
+            const [owner, fileId, hash, size, shards] = process.argv.slice(3);
+            
+            console.error("[Blockchain Proxy] Registering file:", { owner, fileId, hash, size, shards });
+            
+            const tx = await contractWithSigner.registerFile(
+                owner,
+                fileId,
+                hash.startsWith("0x") ? hash : "0x" + hash,
+                size,
+                shards,
+                Math.floor(Date.now() / 1000)
+            );
+            
+            console.error("[Blockchain Proxy] Transaction sent:", tx.hash);
+            
+            const receipt = await tx.wait();
+            
+            console.error("[Blockchain Proxy] Transaction confirmed:", receipt.transactionHash);
+            
+            process.stdout.write(JSON.stringify({ status: "success", txHash: receipt.transactionHash }));
+        } catch (error) {
+            console.error("[Blockchain Proxy] Registration error:", error.message);
+            process.stdout.write(JSON.stringify({ error: error.message }));
+            process.exit(1);
+        }
     } else if (command === "read") {
         const fileId = process.argv[3];
         try {
@@ -53,11 +80,14 @@ async function main() {
                 timestamp: record.timestamp.toString()
             }));
         } catch (e) {
-            process.stdout.write(JSON.stringify({ error: "File not found or contract error" }));
+            console.error("[Blockchain Proxy] Read error:", e.message);
+            process.stdout.write(JSON.stringify({ error: "File not found or contract error: " + e.message }));
         }
     }
 }
 
 main().catch(err => {
+    console.error("[Blockchain Proxy] Fatal error:", err.message);
     process.stdout.write(JSON.stringify({ error: err.message }));
+    process.exit(1);
 });

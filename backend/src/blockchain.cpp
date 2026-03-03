@@ -58,18 +58,39 @@ static std::string exec(const std::string& cmd) {
 }
 
 std::string BlockchainHelper::registerFileOnChain(const std::string& owner, const std::string& fileId, const std::string& hashStr, uint64_t size, uint32_t shards) {
-    std::string cmd = "cd scripts && node blockchain_proxy.js register " + owner + " " + fileId + " " + hashStr + " " + std::to_string(size) + " " + std::to_string(shards);
+    // Ensure hash is properly formatted as 64 hex characters (32 bytes)
+    std::string formattedHash = hashStr;
+    if (formattedHash.length() < 64) {
+        formattedHash = std::string(64 - formattedHash.length(), '0') + formattedHash;
+    }
+    
+    std::string cmd = "cd scripts && node blockchain_proxy.js register " + owner + " " + fileId + " " + formattedHash + " " + std::to_string(size) + " " + std::to_string(shards);
     std::cout << "[Blockchain] Executing: " << cmd << std::endl;
+    std::cout << "[Blockchain] Hash: " << formattedHash << " (length: " << formattedHash.length() << ")" << std::endl;
     
     std::string output = exec(cmd);
-    std::cout << "[Blockchain] Output: " << output << std::endl;
+    std::cout << "[Blockchain] Raw Output: '" << output << "'" << std::endl;
+    
+    // Trim whitespace from output
+    output.erase(0, output.find_first_not_of(" \n\r\t"));
+    output.erase(output.find_last_not_of(" \n\r\t") + 1);
+    
+    if (output.empty()) {
+        std::cout << "[Blockchain] ERROR: Empty output from blockchain proxy" << std::endl;
+        return "";
+    }
     
     try {
         auto j = json::parse(output);
+        if (j.contains("error")) {
+            std::cout << "[Blockchain] ERROR: " << j["error"].get<std::string>() << std::endl;
+            return "";
+        }
         if (j.contains("txHash")) {
             return j["txHash"].get<std::string>();
         }
-    } catch (...) {
+    } catch (const std::exception& e) {
+        std::cout << "[Blockchain] JSON Parse Error: " << e.what() << std::endl;
         return "";
     }
     return "";

@@ -164,14 +164,21 @@ export default function Dashboard() {
             }, 300)
 
             const result = await uploadFile(file, address, currentFolder)
+            
+            console.log('[Upload] Backend response:', result)
+            console.log('[Upload] txHash:', result.txHash)
+            console.log('[Upload] txHash type:', typeof result.txHash)
+            console.log('[Upload] txHash truthy?:', !!result.txHash)
 
             clearInterval(progressInterval)
             setUploadProgress(100)
             
-            if (result.txHash) {
+            if (result.txHash && result.txHash.length > 0) {
+                console.log('[Upload] Setting transaction hash:', result.txHash)
                 setUploadStep('✅ Registered on Avalanche!')
                 setUploadTxHash(result.txHash)
             } else {
+                console.log('[Upload] No transaction hash received')
                 setUploadStep('Protocol Complete!')
             }
 
@@ -182,6 +189,7 @@ export default function Dashboard() {
                 refetchBalance?.()
             }, 3000)
         } catch (err) {
+            console.error('[Upload] Error:', err)
             setError('Upload sequence failed at the engine level.')
             setIsUploading(false)
         }
