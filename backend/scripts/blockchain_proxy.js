@@ -41,12 +41,28 @@ async function main() {
             const wallet = new ethers.Wallet(privateKey, provider);
             const contractWithSigner = contract.connect(wallet);
 
-            const [owner, fileId, hash, size, shards] = process.argv.slice(3);
+            const [ownerAddress, fileId, hash, size, shards] = process.argv.slice(3);
             
-            console.error("[Blockchain Proxy] Registering file:", { owner, fileId, hash, size, shards });
+            // Validate and normalize the owner address
+            let normalizedOwner;
+            try {
+                normalizedOwner = ethers.utils.getAddress(ownerAddress);
+            } catch (e) {
+                console.error("[Blockchain Proxy] Invalid owner address:", ownerAddress);
+                process.stdout.write(JSON.stringify({ error: "Invalid owner address: " + ownerAddress }));
+                process.exit(1);
+            }
+            
+            console.error("[Blockchain Proxy] Registering file:", { 
+                owner: normalizedOwner, 
+                fileId, 
+                hash, 
+                size, 
+                shards 
+            });
             
             const tx = await contractWithSigner.registerFile(
-                owner,
+                normalizedOwner,
                 fileId,
                 hash.startsWith("0x") ? hash : "0x" + hash,
                 size,
