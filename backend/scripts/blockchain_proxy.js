@@ -14,7 +14,7 @@ async function main() {
 
     if (!contractAddress) {
         process.stdout.write(JSON.stringify({ error: "Missing AVALANCHE_REGISTRY_ADDRESS" }));
-        return;
+        process.exit(1);
     }
 
     const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
@@ -23,7 +23,7 @@ async function main() {
     if (command === "register") {
         if (!privateKey) {
             process.stdout.write(JSON.stringify({ error: "Missing VAULT_SIGNER_PRIVATE_KEY" }));
-            return;
+            process.exit(1);
         }
         const wallet = new ethers.Wallet(privateKey, provider);
         const contractWithSigner = contract.connect(wallet);
