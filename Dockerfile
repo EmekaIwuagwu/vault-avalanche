@@ -57,6 +57,8 @@ EXPOSE 3000
 # Start script to run both
 RUN echo '#!/bin/sh\n\
 echo "Protocol Initialization: Starting Vault Engine..."\n\
+# Touch log file so tail doesn't fail immediately\n\
+touch /app/backend.log\n\
 # Run backend in background and log to a file we can tail\n\
 /usr/local/bin/vault_server > /app/backend.log 2>&1 & \n\
 # Stream backend logs to stdout so they show up in Render dashboard\n\
