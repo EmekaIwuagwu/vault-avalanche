@@ -1,5 +1,17 @@
 const { ethers } = require("ethers");
 
+process.on('uncaughtException', (err) => {
+    console.error("[Blockchain Proxy] Uncaught Exception:", err.message);
+    process.stdout.write(JSON.stringify({ error: "Uncaught Exception: " + err.message }));
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error("[Blockchain Proxy] Unhandled Rejection at:", promise, "reason:", reason);
+    process.stdout.write(JSON.stringify({ error: "Unhandled Rejection: " + (reason.message || reason) }));
+    process.exit(1);
+});
+
 try {
     require("dotenv").config();
 } catch (e) {
@@ -36,13 +48,13 @@ async function main() {
             process.stdout.write(JSON.stringify({ error: "Missing VAULT_SIGNER_PRIVATE_KEY" }));
             process.exit(1);
         }
-        
+
         try {
             const wallet = new ethers.Wallet(privateKey, provider);
             const contractWithSigner = contract.connect(wallet);
 
             const [ownerAddress, fileId, hash, size, shards] = process.argv.slice(3);
-            
+
             // Validate and normalize the owner address
             let normalizedOwner;
             try {
@@ -52,30 +64,31 @@ async function main() {
                 process.stdout.write(JSON.stringify({ error: "Invalid owner address: " + ownerAddress }));
                 process.exit(1);
             }
-            
-            console.error("[Blockchain Proxy] Registering file:", { 
-                owner: normalizedOwner, 
-                fileId, 
-                hash, 
-                size, 
-                shards 
+
+            console.error("[Blockchain Proxy] Registering file:", {
+                owner: normalizedOwner,
+                fileId,
+                hash,
+                size,
+                shards
             });
-            
+
             const tx = await contractWithSigner.registerFile(
                 normalizedOwner,
                 fileId,
                 hash.startsWith("0x") ? hash : "0x" + hash,
                 size,
                 shards,
-                Math.floor(Date.now() / 1000)
+                Math.floor(Date.now() / 1000),
+                { gasLimit: 3000000 } // Explicit high gas limit to avoid Fuji node estimation bugs
             );
-            
+
             console.error("[Blockchain Proxy] Transaction sent:", tx.hash);
-            
+
             const receipt = await tx.wait();
-            
+
             console.error("[Blockchain Proxy] Transaction confirmed:", receipt.transactionHash);
-            
+
             process.stdout.write(JSON.stringify({ status: "success", txHash: receipt.transactionHash }));
         } catch (error) {
             console.error("[Blockchain Proxy] Registration error:", error.message);

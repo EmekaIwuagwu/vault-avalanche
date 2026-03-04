@@ -66,9 +66,9 @@ std::string BlockchainHelper::registerFileOnChain(const std::string& owner, cons
     
     // Use full path to blockchain_proxy.js to work on both local and Render
     #ifdef _WIN32
-        std::string cmd = "node scripts\\blockchain_proxy.js register " + owner + " " + fileId + " " + formattedHash + " " + std::to_string(size) + " " + std::to_string(shards);
+        std::string cmd = "node scripts\\blockchain_proxy.js register " + owner + " " + fileId + " " + formattedHash + " " + std::to_string(size) + " " + std::to_string(shards) + " 2>&1";
     #else
-        std::string cmd = "node ./scripts/blockchain_proxy.js register " + owner + " " + fileId + " " + formattedHash + " " + std::to_string(size) + " " + std::to_string(shards);
+        std::string cmd = "node ./scripts/blockchain_proxy.js register " + owner + " " + fileId + " " + formattedHash + " " + std::to_string(size) + " " + std::to_string(shards) + " 2>&1";
     #endif
     
     std::cout << "[Blockchain] Executing: " << cmd << std::endl;
@@ -104,9 +104,9 @@ std::string BlockchainHelper::registerFileOnChain(const std::string& owner, cons
 
 std::string BlockchainHelper::getOnChainRecord(const std::string& fileId) {
     #ifdef _WIN32
-        std::string cmd = "node scripts\\blockchain_proxy.js read " + fileId;
+        std::string cmd = "node scripts\\blockchain_proxy.js read " + fileId + " 2>&1";
     #else
-        std::string cmd = "node ./scripts/blockchain_proxy.js read " + fileId;
+        std::string cmd = "node ./scripts/blockchain_proxy.js read " + fileId + " 2>&1";
     #endif
     std::string output = exec(cmd);
     return output;
