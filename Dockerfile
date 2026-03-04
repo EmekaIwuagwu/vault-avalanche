@@ -59,6 +59,8 @@ RUN echo '#!/bin/sh\n\
 echo "Protocol Initialization: Starting Vault Engine..."\n\
 # Run backend in background and log to a file we can tail\n\
 /usr/local/bin/vault_server > /app/backend.log 2>&1 & \n\
+# Stream backend logs to stdout so they show up in Render dashboard\n\
+tail -f /app/backend.log & \n\
 \n\
 # Wait for backend to start\n\
 sleep 5\n\
