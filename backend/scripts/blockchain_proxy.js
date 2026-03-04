@@ -13,7 +13,7 @@ const ABI = [
 
 async function main() {
     const command = process.argv[2];
-    const rpcUrl = process.env.AVALANCHE_FUJI_RPC_URL || "https://api.avax-test.network/ext/bc/C/rpc";
+    const rpcUrl = process.env.AVALANCHE_FUJI_RPC_URL || "https://avalanche-fuji.drpc.org";
     const privateKey = process.env.VAULT_SIGNER_PRIVATE_KEY;
     const contractAddress = process.env.AVALANCHE_REGISTRY_ADDRESS;
 
