@@ -30,10 +30,12 @@ async function main() {
     const contractAddress = process.env.AVALANCHE_REGISTRY_ADDRESS;
 
     // Debug logging
-    console.error("[Blockchain Proxy] Command:", command);
-    console.error("[Blockchain Proxy] RPC URL:", rpcUrl);
-    console.error("[Blockchain Proxy] Contract Address:", contractAddress ? "SET" : "MISSING");
-    console.error("[Blockchain Proxy] Private Key:", privateKey ? "SET" : "MISSING");
+    console.error(`[Blockchain Proxy] Command: ${command}`);
+    console.error(`[Blockchain Proxy] RPC URL: ${rpcUrl}`);
+    console.error(`[Blockchain Proxy] Contract Address: ${contractAddress ? contractAddress : "MISSING"}`);
+    console.error(`[Blockchain Proxy] Private Key: ${privateKey ? "SET (Length: " + privateKey.length + ")" : "MISSING"}`);
+    console.error(`[Blockchain Proxy] process.cwd(): ${process.cwd()}`);
+    console.error(`[Blockchain Proxy] __dirname: ${__dirname}`);
 
     if (!contractAddress) {
         process.stdout.write(JSON.stringify({ error: "Missing AVALANCHE_REGISTRY_ADDRESS" }));
