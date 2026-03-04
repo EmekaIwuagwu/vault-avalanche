@@ -77,12 +77,18 @@ std::string BlockchainHelper::registerFileOnChain(const std::string& owner, cons
     std::string output = exec(cmd);
     std::cout << "[Blockchain] Raw Output: '" << output << "'" << std::endl;
     
-    // Trim whitespace from output
-    output.erase(0, output.find_first_not_of(" \n\r\t"));
-    output.erase(output.find_last_not_of(" \n\r\t") + 1);
+    // Extract the JSON object from output (since stderr logs are mixed in)
+    size_t jsonPos = output.rfind("{\"status\"");
+    if (jsonPos == std::string::npos) jsonPos = output.rfind("{\"error\"");
     
-    if (output.empty()) {
-        std::cout << "[Blockchain] ERROR: Empty output from blockchain proxy" << std::endl;
+    if (jsonPos != std::string::npos) {
+        output = output.substr(jsonPos);
+        size_t jsonEnd = output.rfind('}');
+        if (jsonEnd != std::string::npos) {
+            output = output.substr(0, jsonEnd + 1);
+        }
+    } else {
+        std::cout << "[Blockchain] ERROR: No JSON response found in output" << std::endl;
         return "";
     }
     
@@ -109,6 +115,19 @@ std::string BlockchainHelper::getOnChainRecord(const std::string& fileId) {
         std::string cmd = "node ./scripts/blockchain_proxy.js read " + fileId + " 2>&1";
     #endif
     std::string output = exec(cmd);
+    
+    // Extract the JSON object from output (since stderr logs are mixed in)
+    size_t jsonPos = output.rfind("{\"exists\"");
+    if (jsonPos == std::string::npos) jsonPos = output.rfind("{\"error\"");
+    
+    if (jsonPos != std::string::npos) {
+        output = output.substr(jsonPos);
+        size_t jsonEnd = output.rfind('}');
+        if (jsonEnd != std::string::npos) {
+            output = output.substr(0, jsonEnd + 1);
+        }
+    }
+    
     return output;
 }
 
