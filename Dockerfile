@@ -44,6 +44,10 @@ ENV VAULT_DATA_PATH=/app/data
 # Copy Backend binary
 COPY --from=backend-builder /app/build/vault_server /usr/local/bin/vault_server
 
+# Copy Backend blockchain proxy scripts and initialize dependencies
+COPY --from=backend-builder /app/scripts /app/scripts
+RUN cd /app/scripts && npm install
+
 # Copy Frontend files
 COPY --from=frontend-builder /app/next.config.ts ./
 COPY --from=frontend-builder /app/public ./public
